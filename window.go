@@ -9,7 +9,6 @@ type Window struct {
 	Conn 		*xgb.Conn
 	Screen 		*xproto.ScreenInfo
 	Window 		xproto.Window
-	Drawable	xproto.Drawable
 }
 
 // Function for creating a new window, with default options in place.
@@ -45,11 +44,8 @@ func NewWindowComplex(Width uint16, Height uint16, BorderWidth uint16, Mask uint
 	err = xproto.MapWindowChecked(X, windowID).Check()
 	if err != nil {errors[2] = err}
 
-	// drawable context
-	draw := xproto.Drawable(windowID)
-
 	// make a new Window object with what we've gotten here
-	win = Window{X, screen, windowID, draw}
+	win = Window{X, screen, windowID}
 
 	return
 }

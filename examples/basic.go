@@ -29,7 +29,6 @@ func main() {
 
 	// Event loop
 	for {
-		TermUI.Base(&win, 0,0,16,16)
 		ev, xerr := win.Conn.WaitForEvent()
 
 		// (in some WMs this happens when you close the program)
@@ -44,7 +43,7 @@ func main() {
 
 		switch ev.(type) {
 		case xproto.ExposeEvent:
-			TermUI.Base(&win, 0,0,16,16)
+			win.Button(64,16,160,100)
 		case xproto.KeyPressEvent:
 			// See https://pkg.go.dev/github.com/jezek/xgb/xproto#KeyPressEvent
 			// for documentation about a key press event.
