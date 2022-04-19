@@ -14,9 +14,7 @@ func main() {
 		[]uint32{
 			0xffffffff,
 			xproto.EventMaskKeyPress |
-			xproto.EventMaskKeyRelease |
-			xproto.EventMaskStructureNotify | 
-			xproto.EventMaskExposure,
+			xproto.EventMaskKeyRelease,
 		})
 
 	// Check errors (there are three returned at once, so they're in an array)
@@ -27,7 +25,17 @@ func main() {
 		}
 	}
 
-	// Event loop
+	// Now we create any elements we want
+	win.Button("EXAMPLE_BUTTON",64,16,160,100)
+
+	// We have two event loops
+	// One for checking for UI events, that shouldn't hang...
+	go func() {
+		for {
+			fmt.Println(win.WaitForUIEvent())
+		}
+	}()
+	// And one for checking for X events, which SHOULD hang.
 	for {
 		ev, xerr := win.Conn.WaitForEvent()
 
@@ -42,11 +50,11 @@ func main() {
 		}
 
 		switch ev.(type) {
+        case xproto.MotionNotifyEvent:
+        	go win.CheckMouseMove(ev)
 		case xproto.ExposeEvent:
-			win.Button(64,16,160,100)
+			go win.DrawUIElements()
 		case xproto.KeyPressEvent:
-			// See https://pkg.go.dev/github.com/jezek/xgb/xproto#KeyPressEvent
-			// for documentation about a key press event.
 			kpe := ev.(xproto.KeyPressEvent)
 			fmt.Printf("Key pressed: %d\n", kpe.Detail)
 			// todo: exit on "q" not "24th key"

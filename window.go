@@ -6,14 +6,21 @@ import (
 )
 
 type Window struct {
-	Conn 		*xgb.Conn
-	Screen 		*xproto.ScreenInfo
-	Window 		xproto.Window
+	Conn 			*xgb.Conn
+	Screen 			*xproto.ScreenInfo
+	Window 			xproto.Window
+
+	uiEventChan		chan Event
 }
 
 // Function for creating a new window, with default options in place.
 func NewWindow(Width uint16, Height uint16, Flags []uint32) (Window Window, Errors [3]error) {
-	Window, Errors = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, Flags)
+	flags := []uint32{Flags[0], Flags[1] | 
+	xproto.EventMaskStructureNotify | 
+	xproto.EventMaskExposure | 
+	xproto.EventMaskPointerMotion,
+	}
+	Window, Errors = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, flags)
 	return
 }
 
@@ -45,7 +52,7 @@ func NewWindowComplex(Width uint16, Height uint16, BorderWidth uint16, Mask uint
 	if err != nil {errors[2] = err}
 
 	// make a new Window object with what we've gotten here
-	win = Window{X, screen, windowID}
+	win = Window{X, screen, windowID,nil}
 
 	return
 }

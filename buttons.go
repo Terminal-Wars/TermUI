@@ -6,8 +6,15 @@ import (
 	"github.com/jezek/xgb/xproto"
 )
 
-func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16) {
+type Button struct {
+	Name 	string
+	Width 	uint16
+	Height 	uint16
+	X 		int16
+	Y 		int16
+}
 
+func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16) {
 	// Drawing contexts
 	draw := [5]xproto.Drawable{
 		xproto.Drawable(win.Window),
@@ -76,6 +83,17 @@ func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16) {
 	}
 } 
 
-func (win *Window) Button(Width uint16, Height uint16, X int16, Y int16) {
-	win.Base(Width,Height,X,Y)
+func (win *Window) Button(Name string, Width uint16, Height uint16, X int16, Y int16) {
+	if(win.NoMoreButtons()) {
+		fmt.Println("No more buttons allowed. Refusing to make a button.")
+		return
+	}
+	if(win.NoMoreUIEvents()) {
+		fmt.Println("No more mouse events allowed. Refusing to make a button.")
+		return
+	}
+	// Create a button.
+	UIElements.Buttons[ButtonNum] = Button{Name,Width,Height,X,Y}
+	win.NewUIEvent(Name,Width,Height,X,Y)
+	ButtonNum++
 }
