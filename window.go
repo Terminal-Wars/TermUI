@@ -6,14 +6,15 @@ import (
 )
 
 type Window struct {
-	Conn *xgb.Conn
-	Screen *xproto.ScreenInfo
-	Window xproto.Window
+	Conn 		*xgb.Conn
+	Screen 		*xproto.ScreenInfo
+	Window 		xproto.Window
+	Drawable	xproto.Drawable
 }
 
 // Function for creating a new window, with default options in place.
 func NewWindow(Width uint16, Height uint16, Flags []uint32) (Window Window, Errors [3]error) {
-	Window, Errors = NewWindowComplex(Width, Height, 1, xproto.CwBackPixel | xproto.CwEventMask, Flags)
+	Window, Errors = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, Flags)
 	return
 }
 
@@ -44,8 +45,11 @@ func NewWindowComplex(Width uint16, Height uint16, BorderWidth uint16, Mask uint
 	err = xproto.MapWindowChecked(X, windowID).Check()
 	if err != nil {errors[2] = err}
 
+	// drawable context
+	draw := xproto.Drawable(windowID)
+
 	// make a new Window object with what we've gotten here
-	win = Window{X, screen, windowID}
+	win = Window{X, screen, windowID, draw}
 
 	return
 }

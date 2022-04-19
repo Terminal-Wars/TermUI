@@ -14,11 +14,10 @@ func main() {
 		[]uint32{
 			0xffffffff,
 			xproto.EventMaskKeyPress |
-			xproto.EventMaskKeyRelease,
+			xproto.EventMaskKeyRelease |
+			xproto.EventMaskStructureNotify | 
+			xproto.EventMaskExposure,
 		})
-
-	draw := xproto.Drawable(win.Window)
-	fmt.Println(draw)
 
 	// Check errors (there are three returned at once, so they're in an array)
 	for _, e := range err {
@@ -30,6 +29,7 @@ func main() {
 
 	// Event loop
 	for {
+		TermUI.Base(&win, 0,0,16,16)
 		ev, xerr := win.Conn.WaitForEvent()
 
 		// (in some WMs this happens when you close the program)
@@ -43,6 +43,8 @@ func main() {
 		}
 
 		switch ev.(type) {
+		case xproto.ExposeEvent:
+			TermUI.Base(&win, 0,0,16,16)
 		case xproto.KeyPressEvent:
 			// See https://pkg.go.dev/github.com/jezek/xgb/xproto#KeyPressEvent
 			// for documentation about a key press event.
