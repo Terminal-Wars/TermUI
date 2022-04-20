@@ -26,17 +26,18 @@ func main() {
 	}
 
 	// Now we create any elements we want
-	win.Button("EXAMPLE_BUTTON",64,16,160,100)
+	win.Button("My Cool Button",0,94,23,160,100)
 
 	// We have two event loops
 	// One for checking for UI events...
 	go func() {
 		for {
+			/*
 			ev := win.WaitForUIEvent()
 			switch ev.(type) {
 				case TermUI.UIReleaseEvent:
 					fmt.Println(ev.(TermUI.UIReleaseEvent))
-			}
+			}*/
 		}
 	}()
 	// And one for checking for X events, which SHOULD hang.
@@ -53,13 +54,16 @@ func main() {
 			fmt.Printf("Error: %s\n", xerr)
 		}
 
+		// We want to redraw when there's any event.
+		go win.DrawUIElements()
+
 		switch ev.(type) {
         case xproto.MotionNotifyEvent:
         	go win.CheckMouseHover(ev) // required for checking object hovers
+		case xproto.ButtonPressEvent:
+			go win.CheckMousePress(ev) // required for checking object clicks
 		case xproto.ButtonReleaseEvent:
-			go win.CheckMouseRelease(ev) // required for checking object clicks
-		case xproto.ExposeEvent:
-			go win.DrawUIElements() // required for drawing any ui elements
+			go win.CheckMouseRelease(ev) // required for checking object releases
 		case xproto.KeyPressEvent:
 			kpe := ev.(xproto.KeyPressEvent)
 			fmt.Printf("Key pressed: %d\n", kpe.Detail)

@@ -6,15 +6,7 @@ import (
 	"github.com/jezek/xgb/xproto"
 )
 
-type Button struct {
-	Name 	string
-	Width 	uint16
-	Height 	uint16
-	X 		int16
-	Y 		int16
-}
-
-func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16) {
+func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16, colors [5]uint32) {
 	// Drawing contexts
 	draw := [5]xproto.Drawable{
 		xproto.Drawable(win.Window),
@@ -26,11 +18,6 @@ func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16) {
 
 	// Graphics context
 	gcontext := [5]xproto.Gcontext{}
-
-	// Colors for the rectangles
-	colors := [5]uint32{
-		0xafb5b5,0x000000,0x808080,0xffffff,0xd7dfdf,
-	}
 
 	// Create a gcontext for each setting
 	for i, v := range colors {
@@ -83,17 +70,23 @@ func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16) {
 	}
 } 
 
-func (win *Window) Button(Name string, Width uint16, Height uint16, X int16, Y int16) {
-	if(win.NoMoreButtons()) {
-		fmt.Println("No more buttons allowed. Refusing to make a button.")
-		return
-	}
+func (win *Window) BaseRaised(Width uint16, Height uint16, X int16, Y int16) {
+	colors := [5]uint32{0xafb5b5,0x000000,0x808080,0xffffff,0xd7dfdf}
+	win.Base(Width,Height,X,Y,colors)
+}
+
+func (win *Window) BaseSunken(Width uint16, Height uint16, X int16, Y int16) {
+	colors := [5]uint32{0xafb5b5,0xffffff,0xd7dfdf,0x000000,0x808080}
+	win.Base(Width,Height,X,Y,colors)
+}
+
+func (win *Window) Button(Name string, ID int16, Width uint16, Height uint16, X int16, Y int16) {
 	if(win.NoMoreUIEvents()) {
-		fmt.Println("No more mouse events allowed. Refusing to make a button.")
+		fmt.Println("No more UI events allowed. Refusing to make a button.")
 		return
 	}
 	// Create a button.
-	UIElements.Buttons[ButtonNum] = Button{Name,Width,Height,X,Y}
-	win.NewUIEvent(Name,Width,Height,X,Y)
+	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y)
+	UIElements.Buttons[ButtonNum] = ev
 	ButtonNum++
 }
