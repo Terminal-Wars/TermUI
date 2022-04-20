@@ -26,18 +26,32 @@ type UIEvent struct {
 
 // What returns when we hover over something
 type UIHoverEvent struct {
-	ID 		int16
 	Name 	string
+	Event *UIEvent
 }
 
 func (v UIHoverEvent) String() string {
-	return fmt.Sprintf("UIHoverEvent {ID: %d, Name: %s}", v.ID, v.Name)
+	return fmt.Sprintf("UIHoverEvent {Name: %s, Event: %p}", v.Name, v.Event)
 }
 
 // What returns when we click something
-type UIClickEvent struct {
-	ID 		int16
+type UIPressEvent struct {
 	Name 	string
+	Event *UIEvent
+}
+
+func (v UIPressEvent) String() string {
+	return fmt.Sprintf("UIPressEvent {Name: %s, Event: %p}", v.Name, v.Event)
+}
+
+// What returns when we release our click on something
+type UIReleaseEvent struct {
+	Name 	string
+	Event *UIEvent
+}
+
+func (v UIReleaseEvent) String() string {
+	return fmt.Sprintf("UIReleaseEvent {Name: %s, Event: %p}", v.Name, v.Event)
 }
 
 var ButtonNum int16 = 0

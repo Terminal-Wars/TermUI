@@ -29,10 +29,14 @@ func main() {
 	win.Button("EXAMPLE_BUTTON",64,16,160,100)
 
 	// We have two event loops
-	// One for checking for UI events, that shouldn't hang...
+	// One for checking for UI events...
 	go func() {
 		for {
-			fmt.Println(win.WaitForUIEvent())
+			ev := win.WaitForUIEvent()
+			switch ev.(type) {
+				case TermUI.UIReleaseEvent:
+					fmt.Println(ev.(TermUI.UIReleaseEvent))
+			}
 		}
 	}()
 	// And one for checking for X events, which SHOULD hang.
@@ -51,9 +55,11 @@ func main() {
 
 		switch ev.(type) {
         case xproto.MotionNotifyEvent:
-        	go win.CheckMouseMove(ev)
+        	go win.CheckMouseHover(ev) // required for checking object hovers
+		case xproto.ButtonReleaseEvent:
+			go win.CheckMouseRelease(ev) // required for checking object clicks
 		case xproto.ExposeEvent:
-			go win.DrawUIElements()
+			go win.DrawUIElements() // required for drawing any ui elements
 		case xproto.KeyPressEvent:
 			kpe := ev.(xproto.KeyPressEvent)
 			fmt.Printf("Key pressed: %d\n", kpe.Detail)

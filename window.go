@@ -18,12 +18,15 @@ func NewWindow(Width uint16, Height uint16, Flags []uint32) (Window Window, Erro
 	flags := []uint32{Flags[0], Flags[1] | 
 	xproto.EventMaskStructureNotify | 
 	xproto.EventMaskExposure | 
-	xproto.EventMaskPointerMotion,
+	xproto.EventMaskPointerMotion |
+	xproto.EventMaskButtonPress |
+	xproto.EventMaskButtonRelease,
 	}
 	Window, Errors = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, flags)
 	return
 }
 
+// Function for creating a new window witohut any default options in place
 func NewWindowComplex(Width uint16, Height uint16, BorderWidth uint16, Mask uint32, Flags []uint32) (win Window, errors [3]error) {
 
 	// establish a new connection
@@ -52,7 +55,7 @@ func NewWindowComplex(Width uint16, Height uint16, BorderWidth uint16, Mask uint
 	if err != nil {errors[2] = err}
 
 	// make a new Window object with what we've gotten here
-	win = Window{X, screen, windowID,nil}
+	win = Window{X, screen, windowID,make(chan Event)}
 
 	return
 }
