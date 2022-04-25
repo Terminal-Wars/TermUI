@@ -86,7 +86,7 @@ func (win *Window) Button(Name string, ID int16, Width uint16, Height uint16, X 
 		return
 	}
 	// Create a button.
-	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y)
+	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y,0,ButtonNum)
 	UIElements.Buttons[ButtonNum] = ev
 	ButtonNum++
 }

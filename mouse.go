@@ -16,6 +16,7 @@ func (win *Window) CheckMouseHover(ev xgb.Event) {
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v != nil) {
 		v.State = 1
+		win.DrawUIElement(v)
 		ev := UIHoverEvent{v.Name, v}
 		win.uiEventChan <- ev
 	}
@@ -27,6 +28,7 @@ func (win *Window) CheckMousePress(ev xgb.Event) {
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v != nil) {
 		v.State = 2
+		win.DrawUIElement(v)
 		ev := UIPressEvent{v.Name, v}
 		win.uiEventChan <- ev
 	}
@@ -38,6 +40,7 @@ func (win *Window) CheckMouseRelease(ev xgb.Event) {
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v != nil) {
 		v.State = 0
+		win.DrawUIElement(v)
 		ev := UIReleaseEvent{v.Name, v}
 		win.uiEventChan <- ev
 	}
@@ -46,7 +49,7 @@ func (win *Window) CheckMouseRelease(ev xgb.Event) {
 
 func checkMouseOver(x int16, y int16) (*UIEvent) {
 	for i, v := range UIEvents {
-		if(int16(i) == UIEventNum) {break}
+		if(uint8(i) == UIEventNum) {break}
 		if(x >= v.X && y >= v.Y && x <= v.X+int16(v.Width) && y <= v.Y+int16(v.Height)) {
 			return UIEvents[i]
 		}
