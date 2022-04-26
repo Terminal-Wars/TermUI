@@ -15,7 +15,7 @@ func (win *Window) CheckMouseHover(ev xgb.Event) {
 	MousePos.Y = ev.(xproto.MotionNotifyEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v != nil) {
-		v.State = 1
+		win.changeState(v,0)
 		win.DrawUIElement(v)
 		ev := UIHoverEvent{v.Name, v}
 		win.uiEventChan <- ev
@@ -27,7 +27,7 @@ func (win *Window) CheckMousePress(ev xgb.Event) {
 	MousePos.Y = ev.(xproto.ButtonPressEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v != nil) {
-		v.State = 2
+		win.changeState(v,1)
 		win.DrawUIElement(v)
 		ev := UIPressEvent{v.Name, v}
 		win.uiEventChan <- ev
@@ -39,7 +39,7 @@ func (win *Window) CheckMouseRelease(ev xgb.Event) {
 	MousePos.Y = ev.(xproto.ButtonReleaseEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v != nil) {
-		v.State = 0
+		win.changeState(v,2)
 		win.DrawUIElement(v)
 		ev := UIReleaseEvent{v.Name, v}
 		win.uiEventChan <- ev

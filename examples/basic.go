@@ -27,12 +27,10 @@ func main() {
 
 	// Now we create any elements we want
 	win.Button("My Cool Button",0,94,23,160,100)
-	win.Button("B",1,32,32,0,0)
+	win.Textbox("my cool text",0,256,23,5,3)
 
 	// We have two event loops
-	// One for checking for UI events...
-
-	/*
+	// One for checking for UI events, which shouldn't hang.
 	go func() {
 		for {
 			ev := win.WaitForUIEvent()
@@ -42,7 +40,6 @@ func main() {
 			}
 		}
 	}()
-	*/
 	// And one for checking for X events, which SHOULD hang.
 	for {
 		ev, xerr := win.Conn.WaitForEvent()
@@ -51,35 +48,17 @@ func main() {
 		// (in some WMs this happens when you close the program)
 		if ev == nil && xerr == nil {return}
 
-		// making the switch a goroutine too seems weird on paper but
+		// All the default listeners required to make the UI work; you are
+		// free to put your own function in place of this to cut
+		// anything you aren't listening on but this suffices for most
+		// cases
+		go win.DefaultListeners(ev);
+
+		// making it a goroutine too seems weird on paper but
 		// without it, the cpu usage is usually 95%. using one brings 
-		// that down by like 94.5%, it's fucking insane considering this
-		// is being deployed to wasm which is single threaded but ¯\_(ツ)_/¯
-		// (actually i think v86 uses web-workers to do threads so this maybe
-		// makes sense)
-		go func() {
-			switch ev.(type) {
-			case xproto.ExposeEvent:
-				go win.DrawUIElements()
-			/*
-	        // required for checking object hovers;
-	        // you almost never need this but it's here if you want
-	        case xproto.MotionNotifyEvent:
-	        	go win.CheckMouseHover(ev) 
-	        */
-			case xproto.ButtonPressEvent:
-				go win.CheckMousePress(ev) // required for checking object clicks
-			case xproto.ButtonReleaseEvent:
-				go win.CheckMouseRelease(ev) // required for checking object releases
-			case xproto.KeyPressEvent:
-				kpe := ev.(xproto.KeyPressEvent)
-				// todo: exit on "q" not "24th key"
-				if kpe.Detail == 24 {
-					return // exit on q
-				}
-			case xproto.DestroyNotifyEvent:
-				return
-			}
-		}();
+		// that down to like 0.2% ¯\_(ツ)_/¯
+
+		// that said, if you do put your own switch or another switch here,
+		// it should be in an inline goroutine
 	}
 }
