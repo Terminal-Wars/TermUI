@@ -1,6 +1,8 @@
 package TermUI
 
 import (
+	"fmt"
+
 	"github.com/jezek/xgb"
 	"github.com/jezek/xgb/xproto"
 )
@@ -14,36 +16,48 @@ func (win *Window) CheckMouseHover(ev xgb.Event) {
 	MousePos.X = ev.(xproto.MotionNotifyEvent).EventX
 	MousePos.Y = ev.(xproto.MotionNotifyEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
-	if(v != nil) {
-		win.changeState(v,0)
-		win.DrawUIElement(v)
-		ev := UIHoverEvent{v.Name, v}
-		win.uiEventChan <- ev
+	if(v == nil) {
+		v = lastSelectedUIEvent
+	} else {
+		lastSelectedUIEvent = v
 	}
+	lastSelectedUIEvent = v
+	win.changeState(v,0)
+	win.DrawUIElement(v)
+	evn := UIHoverEvent{v.Name, v}
+	win.uiEventChan <- evn
 }
 
 func (win *Window) CheckMousePress(ev xgb.Event) {
 	MousePos.X = ev.(xproto.ButtonPressEvent).EventX
 	MousePos.Y = ev.(xproto.ButtonPressEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
-	if(v != nil) {
-		win.changeState(v,1)
-		win.DrawUIElement(v)
-		ev := UIPressEvent{v.Name, v}
-		win.uiEventChan <- ev
+	if(v == nil) {
+		v = lastSelectedUIEvent
+	} else {
+		lastSelectedUIEvent = v
 	}
+	lastSelectedUIEvent = v
+	win.changeState(v,1)
+	win.DrawUIElement(v)
+	evn := UIPressEvent{v.Name, v}
+	win.uiEventChan <- evn
 }
 
 func (win *Window) CheckMouseRelease(ev xgb.Event) {
 	MousePos.X = ev.(xproto.ButtonReleaseEvent).EventX
 	MousePos.Y = ev.(xproto.ButtonReleaseEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
-	if(v != nil) {
-		win.changeState(v,2)
-		win.DrawUIElement(v)
-		ev := UIReleaseEvent{v.Name, v}
-		win.uiEventChan <- ev
+	fmt.Println(v == nil)
+	if(v == nil) {
+		v = lastSelectedUIEvent
+	} else {
+		lastSelectedUIEvent = v
 	}
+	win.changeState(v,2)
+	win.DrawUIElement(v)
+	evn := UIReleaseEvent{v.Name, v}
+	win.uiEventChan <- evn
 }
 
 

@@ -27,6 +27,8 @@ type UIEvent struct {
 var UIEventNum uint8 = 0
 var UIEvents []*UIEvent = make([]*UIEvent, 255)
 
+var lastSelectedUIEvent *UIEvent // the last ui event we selected.
+
 // Types of elements
 var UIElements struct {
 	Buttons		[16]*UIEvent
