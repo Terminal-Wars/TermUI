@@ -66,6 +66,8 @@ func (win *Window) DefaultListeners(ev xgb.Event) {
 		case xproto.ExposeEvent: 		go win.DrawUIElements()
 		case xproto.ButtonPressEvent: 	go win.CheckMousePress(ev) 
 		case xproto.ButtonReleaseEvent: go win.CheckMouseRelease(ev) 
+		case xproto.KeyPressEvent: 		go win.CheckKeyPress(ev)
+		case xproto.KeyReleaseEvent: 	go win.CheckKeyRelease(ev) 
 		case xproto.DestroyNotifyEvent: return
 	}
 };
