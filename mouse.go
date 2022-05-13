@@ -1,8 +1,6 @@
 package TermUI
 
 import (
-	"fmt"
-
 	"github.com/jezek/xgb"
 	"github.com/jezek/xgb/xproto"
 )
@@ -17,7 +15,11 @@ func (win *Window) CheckMouseHover(ev xgb.Event) {
 	MousePos.Y = ev.(xproto.MotionNotifyEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v == nil) {
-		v = lastSelectedUIEvent
+		if(lastSelectedUIEvent != nil) {
+			v = lastSelectedUIEvent
+		} else {
+			return
+		}
 	} else {
 		lastSelectedUIEvent = v
 	}
@@ -33,7 +35,11 @@ func (win *Window) CheckMousePress(ev xgb.Event) {
 	MousePos.Y = ev.(xproto.ButtonPressEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v == nil) {
-		v = lastSelectedUIEvent
+		if(lastSelectedUIEvent != nil) {
+			v = lastSelectedUIEvent
+		} else {
+			return
+		}
 	} else {
 		lastSelectedUIEvent = v
 	}
@@ -48,9 +54,12 @@ func (win *Window) CheckMouseRelease(ev xgb.Event) {
 	MousePos.X = ev.(xproto.ButtonReleaseEvent).EventX
 	MousePos.Y = ev.(xproto.ButtonReleaseEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
-	fmt.Println(v == nil)
 	if(v == nil) {
-		v = lastSelectedUIEvent
+		if(lastSelectedUIEvent != nil) {
+			v = lastSelectedUIEvent
+		} else {
+			return
+		}
 	} else {
 		lastSelectedUIEvent = v
 	}

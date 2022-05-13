@@ -24,6 +24,11 @@ type UIEvent struct {
 	id 			uint8 // library supplied id
 }
 
+const ( // names for the types above
+	ButtonType	int8 = 0
+	TextboxType int8 = 1
+)
+
 var UIEventNum uint8 = 0
 var UIEvents []*UIEvent = make([]*UIEvent, 255)
 
@@ -138,14 +143,17 @@ func (win *Window) DrawUITextbox(i uint8) {
 	txt := UIElements.Textboxes[i]
 	txtY := (txt.Y+int16(txt.Height/2))+6
 	win.TextboxBase(txt.Width,txt.Height,txt.X,txt.Y)
-	// If it's active, draw a little marker
-	if (txt.State == 1) {
-		txtX_ := txt.X+int16(len(txt.Name))*7
+	// If it's active (but we're not out of bounds), draw a little marker
+	if (txt.State == 1 && len(txt.Name) < int(txt.Width/6-1)) {
+		txtX_ := txt.X+int16((len(txt.Name)*6)+6)
 		txtY_ := txt.Y+4
 		win.Square(1, txt.Height-7, txtX_, txtY_, 0x000000)
 	}
-	// TODO: word wrapping
-	win.DrawText(txt.Name,txt.X+6,txtY,12,0x000000,0xffffff)
+	name := txt.Name
+	if(len(txt.Name) > int(txt.Width/6-1)) {
+		name = txt.Name[len(txt.Name)-int(txt.Width/6-1):len(txt.Name)]
+	}
+	win.DrawText(name,txt.X+6,txtY,12,0x000000,0xffffff)
 }
 
 // ========

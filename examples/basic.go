@@ -52,7 +52,7 @@ func main() {
 		// free to put your own function in place of this to cut
 		// anything you aren't listening on but this suffices for most
 		// cases
-		go win.DefaultListeners(ev);
+		win.DefaultListeners(ev);
 
 		// making it a goroutine too seems weird on paper but
 		// without it, the cpu usage is usually 95%. using one brings 

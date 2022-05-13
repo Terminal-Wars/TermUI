@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"syscall"
 	"unicode"
 	"unicode/utf8"
 	"unsafe"
@@ -33,6 +32,10 @@ import (
 
 */
 import "C"
+
+// ======
+// XKB SHIT
+// ======
 
 type Context struct {
 	Ctx       *C.struct_xkb_context
@@ -61,7 +64,7 @@ const (
 	// represented by a Windows logo.
 	ModSuper
 )
-//
+
 const (
 	// Names for special keys.
 	NameLeftArrow      = "←"
@@ -128,46 +131,17 @@ func (x *Context) Destroy() {
 }
 
 func init() {
+	disp = C.XOpenDisplay(nil);
 	// new key context
 	KeyContext, err = New()
 	if(err != nil) {
 		log.Fatalln(err)
 	}
-
-	// get/update the xkb keymap
-	KeyContext.DestroyKeymapState()
-	ctx := (*C.struct_xkb_context)(unsafe.Pointer(KeyContext.Ctx))
-	disp := C.XOpenDisplay(nil);
-	if disp == nil {
-		log.Fatalln("x11: XOpenDisplay failed")
+	err := KeyContext.UpdateKeymap()
+	if(err != nil) {
+		fmt.Println(err)
+		os.Exit(-1)
 	}
-	xcb := C.XGetXCBConnection(disp)
-	if xcb == nil {
-		log.Fatalln("x11: XGetXCBConnection failed")
-	}
-	xkbDevID := C.xkb_x11_get_core_keyboard_device_id(xcb)
-	if xkbDevID == -1 {
-		log.Fatalln("x11: xkb_x11_get_core_keyboard_device_id failed")
-	}
-	keymap := C.xkb_x11_keymap_new_from_device(ctx, xcb, xkbDevID, C.XKB_KEYMAP_COMPILE_NO_FLAGS)
-	if keymap == nil {
-		log.Fatalln("x11: xkb_x11_keymap_new_from_device failed")
-	}
-	state := C.xkb_x11_state_new_from_device(keymap, xcb, xkbDevID)
-	if state == nil {
-		C.xkb_keymap_unref(keymap)
-		log.Fatalln("x11: xkb_x11_keymap_new_from_device failed")
-	}
-	KeyContext.SetKeymap(unsafe.Pointer(keymap), unsafe.Pointer(state))
-
-}
-
-func (win *Window) CheckKeyRelease(ev xgb.Event) {
-	_ = KeyContext.DecodeKey(ev.(xproto.KeyReleaseEvent).Detail)
-}
-
-func (win *Window) CheckKeyPress(ev xgb.Event) {
-	_ = KeyContext.DecodeKey(ev.(xproto.KeyPressEvent).Detail)
 }
 
 func New() (*Context, error) {
@@ -221,29 +195,43 @@ func (x *Context) SetKeymap(xkbKeyMap, xkbState unsafe.Pointer) {
 	x.state = (*C.struct_xkb_state)(xkbState)
 }
 
-func (x *Context) LoadKeymap(format int, fd int, size int) error {
-	x.DestroyKeymapState()
-	mapData, err := syscall.Mmap(int(fd), 0, int(size), syscall.PROT_READ, syscall.MAP_SHARED)
-	if err != nil {
-		return fmt.Errorf("newXKB: mmap of keymap failed: %v", err)
+func (x *Context) UpdateKeymap() error {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered div panic", r)
+		}
+	}()
+	KeyContext.DestroyKeymapState()
+	ctx := (*C.struct_xkb_context)(unsafe.Pointer(KeyContext.Ctx))
+	if disp == nil {
+		return errors.New("x11: XOpenDisplay failed")
 	}
-	defer syscall.Munmap(mapData)
-	keyMap := C.xkb_keymap_new_from_buffer(x.Ctx, (*C.char)(unsafe.Pointer(&mapData[0])), C.size_t(size-1), C.XKB_KEYMAP_FORMAT_TEXT_V1, C.XKB_KEYMAP_COMPILE_NO_FLAGS)
-	if keyMap == nil {
-		return errors.New("newXKB: xkb_keymap_new_from_buffer failed")
+	xcb := C.XGetXCBConnection(disp)
+	if xcb == nil {
+		return errors.New("x11: XGetXCBConnection failed")
 	}
-	state := C.xkb_state_new(keyMap)
+	xkbDevID := C.xkb_x11_get_core_keyboard_device_id(xcb)
+	if xkbDevID == -1 {
+		return errors.New("x11: xkb_x11_get_core_keyboard_device_id failed")
+	}
+	keymap := C.xkb_x11_keymap_new_from_device(ctx, xcb, xkbDevID, C.XKB_KEYMAP_COMPILE_NO_FLAGS)
+	if keymap == nil {
+		return errors.New("x11: xkb_x11_keymap_new_from_device failed")
+	}
+	state := C.xkb_x11_state_new_from_device(keymap, xcb, xkbDevID)
 	if state == nil {
-		C.xkb_keymap_unref(keyMap)
-		return errors.New("newXKB: xkb_state_new failed")
+		C.xkb_keymap_unref(keymap)
+		return errors.New("x11: xkb_x11_keymap_new_from_device failed")
 	}
-	x.keyMap = keyMap
-	x.state = state
+	KeyContext.SetKeymap(unsafe.Pointer(keymap), unsafe.Pointer(state))
 	return nil
 }
 
 func (x *Context) Modifiers() Modifiers {
 	var mods Modifiers
+	if(x.state == nil) {
+		return mods
+	}
 	if C.xkb_state_mod_name_is_active(x.state, (*C.char)(unsafe.Pointer(&_XKB_MOD_NAME_CTRL[0])), C.XKB_STATE_MODS_EFFECTIVE) == 1 {
 		mods |= ModCtrl
 	}
@@ -261,7 +249,6 @@ func (x *Context) Modifiers() Modifiers {
 
 func (x *Context) DecodeKey(kc xproto.Keycode) (string) {
 	kcim := x.DispatchKey(uint32(kc)) // KeyCodeInMap
-	fmt.Println(kcim)
 	return kcim
 }
 
@@ -309,7 +296,6 @@ func (x *Context) DispatchKey(keyCode uint32) (string) {
 			str = str[:len(str)-s]
 		}
 	}
-	fmt.Println(string(str))
 	return string(str)
 }
 
@@ -320,19 +306,6 @@ func (x *Context) charsForKeycode(keyCode C.xkb_keycode_t) []byte {
 		size = C.xkb_state_key_get_utf8(x.state, keyCode, (*C.char)(unsafe.Pointer(&x.utf8Buf[0])), C.size_t(len(x.utf8Buf)))
 	}
 	return x.utf8Buf[:size]
-}
-
-func (x *Context) IsRepeatKey(keyCode uint32) bool {
-	kc := C.xkb_keycode_t(keyCode)
-	return C.xkb_keymap_key_repeats(x.keyMap, kc) == 1
-}
-
-func (x *Context) UpdateMask(depressed, latched, locked, depressedGroup, latchedGroup, lockedGroup uint32) {
-	if x.state == nil {
-		return
-	}
-	C.xkb_state_update_mask(x.state, C.xkb_mod_mask_t(depressed), C.xkb_mod_mask_t(latched), C.xkb_mod_mask_t(locked),
-	C.xkb_layout_index_t(depressedGroup), C.xkb_layout_index_t(latchedGroup), C.xkb_layout_index_t(lockedGroup))
 }
 
 func convertKeysym(s C.xkb_keysym_t) (string, bool) {
@@ -410,4 +383,33 @@ func convertKeysym(s C.xkb_keysym_t) (string, bool) {
 		return "", false
 	}
 	return n, true
+}
+
+
+// =====
+// OUR SHIT
+// =====
+
+func (win *Window) CheckKeyRelease(ev xgb.Event) {
+	if(lastSelectedUIEvent == nil) {return}
+	_ = KeyContext.DecodeKey(ev.(xproto.KeyReleaseEvent).Detail)
+}
+
+func (win *Window) CheckKeyPress(ev xgb.Event) {
+	err := KeyContext.UpdateKeymap()
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	if(lastSelectedUIEvent == nil) {return}
+	key := KeyContext.DecodeKey(ev.(xproto.KeyPressEvent).Detail)
+	// What was the last thing we selected?
+	switch(lastSelectedUIEvent.Type) {
+		case 1: // textbox
+			if(len(key) == 0 && len(lastSelectedUIEvent.Name) >= 1) { // If the length of the character is zero, it's a backspace
+				lastSelectedUIEvent.Name = string(lastSelectedUIEvent.Name[0:len(lastSelectedUIEvent.Name)-1])
+			} else {
+				lastSelectedUIEvent.Name += key
+			}
+		}
+	win.DrawUIElements()
 }
