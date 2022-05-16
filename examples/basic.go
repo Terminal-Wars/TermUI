@@ -26,14 +26,36 @@ func main() {
 	}
 
 	// Now we create any elements we want
-	win.Button("My Cool Button",0,94,23,160,100)
-	win.Textbox("my cool text",0,256,23,5,3)
+	win.Button("My Cool Button",
+		0, // ui event id
+		uint16(win.PercentOfWidth(30)), 	// Width
+		uint16(win.PercentOfHeight(13)), 	// Height
+		win.PercentOfWidth(69),				// X
+		win.PercentOfHeight(85),				// Y
+	)
+
+	win.Textbox("my cool textbox",
+		0,
+		uint16(win.PercentOfWidth(68)),
+		uint16(win.PercentOfHeight(13)),
+		win.PercentOfWidth(1),
+		win.PercentOfHeight(85),
+	)
+
+	win.Label("AAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJ",
+		0,
+		uint16(win.PercentOfWidth(98)),
+		uint16(win.PercentOfHeight(74)),
+		win.PercentOfWidth(1),
+		win.PercentOfHeight(1),
+	)
 
 	// We have two event loops
 	// One for checking for UI events, which shouldn't hang.
 	go func() {
 		for {
 			ev := win.WaitForUIEvent()
+			fmt.Println(ev)
 			switch ev.(type) {
 				case TermUI.UIReleaseEvent:
 					fmt.Println(ev.(TermUI.UIReleaseEvent))
