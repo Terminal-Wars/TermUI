@@ -65,43 +65,6 @@ const (
 	ModSuper
 )
 
-const (
-	// Names for special keys.
-	NameLeftArrow      = "←"
-	NameRightArrow     = "→"
-	NameUpArrow        = "↑"
-	NameDownArrow      = "↓"
-	NameReturn         = "⏎"
-	NameEnter          = "⌤"
-	NameEscape         = "⎋"
-	NameHome           = "⇱"
-	NameEnd            = "⇲"
-	NameDeleteBackward = "⌫"
-	NameDeleteForward  = "⌦"
-	NamePageUp         = "⇞"
-	NamePageDown       = "⇟"
-	NameTab            = "Tab"
-	NameSpace          = "Space"
-	NameCtrl           = "Ctrl"
-	NameShift          = "Shift"
-	NameAlt            = "Alt"
-	NameSuper          = "Super"
-	NameCommand        = "⌘"
-	NameF1             = "F1"
-	NameF2             = "F2"
-	NameF3             = "F3"
-	NameF4             = "F4"
-	NameF5             = "F5"
-	NameF6             = "F6"
-	NameF7             = "F7"
-	NameF8             = "F8"
-	NameF9             = "F9"
-	NameF10            = "F10"
-	NameF11            = "F11"
-	NameF12            = "F12"
-	NameBack           = "Back"
-)
-
 var (
 	_XKB_MOD_NAME_CTRL  = []byte("Control\x00")
 	_XKB_MOD_NAME_SHIFT = []byte("Shift\x00")
@@ -196,11 +159,11 @@ func (x *Context) SetKeymap(xkbKeyMap, xkbState unsafe.Pointer) {
 }
 
 func (x *Context) UpdateKeymap() error {
-	/*defer func() {
+	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered div panic", r)
+			fmt.Println("Recovered panic!\n", r)
 		}
-	}()*/
+	}()
 	KeyContext.DestroyKeymapState()
 	ctx := (*C.struct_xkb_context)(unsafe.Pointer(KeyContext.Ctx))
 	if disp == nil {
@@ -299,6 +262,15 @@ func (x *Context) DispatchKey(keyCode uint32) (string) {
 			str = x.charsForKeycode(kc)
 		}
 	}
+	
+	// convert some characters to readable ones
+	if(len(str) <= 0) {
+		for n, v := range str {
+			str_, _ := convertKeysym(C.uint(v))
+			str[n] = []byte(str_)[0]
+		}
+	}
+
 	// Report only printable runes.
 	var n int
 	for n < len(str) {
@@ -310,6 +282,7 @@ func (x *Context) DispatchKey(keyCode uint32) (string) {
 			str = str[:len(str)-s]
 		}
 	}
+
 	return string(str)
 }
 

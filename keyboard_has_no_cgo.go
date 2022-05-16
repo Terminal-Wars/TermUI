@@ -4,7 +4,6 @@
 package TermUI
 
 import (
-	//"fmt"
 	"bytes"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -13,15 +12,20 @@ import (
 	"github.com/jezek/xgb/xproto"
 )
 
-const NR_KEYS int16 = 256
+const (
+	DeleteChar 		string = ""
+)
 
 var (
-	HoldingShift int 	= -1
+	HoldingShift 	int 	= -1
+	HoldingAlt 		int 	= -1
+	HoldingCtrl 	int 	= -1
+	HoldingSuper 	int 	= -1
 )
 
 var plain_map = []uint16{
 	0xf200,	0xf01b,	0xf031,	0xf032,	0xf033,	0xf034,	0xf035,	0xf036,
-	0xf037,	0xf038,	0xf039,	0xf030,	0xf02d,	0xf03d,	0x0000,	0xf009,
+	0xf037,	0xf038,	0xf039,	0xf030,	0xf02d,	0xf03d,	0xf07f,	0xf009,
 	0xfb71,	0xfb77,	0xfb65,	0xfb72,	0xfb74,	0xfb79,	0xfb75,	0xfb69,
 	0xfb6f,	0xfb70,	0xf05b,	0xf05d,	0xf201,	0xf702,	0xfb61,	0xfb73,
 	0xfb64,	0xfb66,	0xfb67,	0xfb68,	0xfb6a,	0xfb6b,	0xfb6c,	0xf03b,
@@ -56,7 +60,7 @@ var plain_map = []uint16{
 
 var shift_map = []uint16{
 	0xf200,	0xf01b,	0xf021,	0xf040,	0xf023,	0xf024,	0xf025,	0xf05e,
-	0xf026,	0xf02a,	0xf028,	0xf029,	0xf05f,	0xf02b,	0x0000,	0xf809,
+	0xf026,	0xf02a,	0xf028,	0xf029,	0xf05f,	0xf02b,	0xf07f,	0xf809,
 	0xfb51,	0xfb57,	0xfb45,	0xfb52,	0xfb54,	0xfb59,	0xfb55,	0xfb49,
 	0xfb4f,	0xfb50,	0xf07b,	0xf07d,	0xf201,	0xf702,	0xfb41,	0xfb53,
 	0xfb44,	0xfb46,	0xfb47,	0xfb48,	0xfb4a,	0xfb4b,	0xfb4c,	0xf03a,
@@ -99,7 +103,7 @@ func DecodeKey(kc xproto.Keycode) (string) {
 	} else {
 		kcim = plain_map[kc-8]
 	}
-	if(kcim == 0) { // if it's null, skip all of this.
+	if(kcim == 0xf07f) {
 		return ""
 	}
 
@@ -108,8 +112,45 @@ func DecodeKey(kc xproto.Keycode) (string) {
 	bytebuf := make([]byte, 1)
 	uint16s := make([]uint16, 1)
 
-	if(kcim == 63232) { // if the key is shift, flick the switch internally to shift characters or not
-		HoldingShift *= -1
+	switch(kcim) {
+		case 62976: return NameDownArrow
+		case 62977: return NameLeftArrow
+		case 62978: return NameRightArrow
+		case 62979: return NameUpArrow
+		case 61953: return NameEnter
+		case 1467:  return NameEscape
+		case 61716: return NameHome
+		case 61719: return NameEnd
+		case 61718: return ""
+		case 61717: return NamePageUp
+		case 61720: return NamePageDown
+		case 61449: return NameTab
+		case 61696: return NameF1
+		case 61697: return NameF2
+		case 61698: return NameF3
+		case 61699: return NameF4
+		case 61700: return NameF5
+		case 61701: return NameF6
+		case 61702: return NameF7
+		case 61703: return NameF8
+		case 61704: return NameF9
+		case 61705: return NameF10
+		case 61706: return NameF11
+		case 61707: return NameF12
+		case 63232: 
+			HoldingShift *= -1
+			return "­"
+		case 63233: 
+			HoldingAlt *= -1
+			return "­"
+		case 63234: 
+			HoldingCtrl *= -1
+			return "­"
+		case 61952:
+			HoldingSuper *= -1
+			return "­"
+
+
 	}
 
 	// the first two bytes in the utf16 value aren't actaully useful to us and only exist to throw
