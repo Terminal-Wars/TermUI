@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/Terminal-Wars/TermUI"
 	"github.com/jezek/xgb/xproto"
@@ -16,25 +17,19 @@ func main() {
 			xproto.EventMaskKeyPress |
 			xproto.EventMaskKeyRelease,
 		})
-
-	// Check errors (there are three returned at once, so they're in an array)
-	for _, e := range err {
-		if(e != nil) {
-			fmt.Println(e)
-			return
-		}
-	}
+	if(err != nil) {log.Fatalln(err)}
 
 	// Now we create any elements we want
-	win.Button("My Cool Button",
+	// You're advised to call them with go to speed up boot time.
+	go win.Button("Clear screen",
 		0, // ui event id
 		uint16(win.PercentOfWidth(30)), 	// Width
 		uint16(win.PercentOfHeight(13)), 	// Height
 		win.PercentOfWidth(69),				// X
-		win.PercentOfHeight(85),				// Y
+		win.PercentOfHeight(85),			// Y
 	)
 
-	win.Textbox("my cool textbox",
+	go win.Textbox("",
 		0,
 		uint16(win.PercentOfWidth(68)),
 		uint16(win.PercentOfHeight(13)),
@@ -42,12 +37,13 @@ func main() {
 		win.PercentOfHeight(85),
 	)
 
-	win.Label("AAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJAAAAAAAAAAAAAAAAAAAAAAAAASFESDHJSDFGAKLSDJQIWEROYFSDLKGHKLXCVJVKXCJLVBHKLJXCVKLHHLKJXCBLHJKXCVLHJLHKJXCBLHJKXCVLBHXCVHJKJHKLXCBLJKHXCVLJKLHJKXCXCVHBLXCVKJXLCKJVBXLKCVJXLKCVJ",
+	go win.Label("",
 		0,
 		uint16(win.PercentOfWidth(98)),
 		uint16(win.PercentOfHeight(74)),
 		win.PercentOfWidth(1),
 		win.PercentOfHeight(1),
+		1, // states for labels can be set to have a background and scrollbar.
 	)
 
 	// We have two event loops
@@ -55,10 +51,37 @@ func main() {
 	go func() {
 		for {
 			ev := win.WaitForUIEvent()
-			fmt.Println(ev)
+			// When we get an event, see what type of event it is.
+			// For this example, we're interested in the button click, and enter being pressed.
 			switch ev.(type) {
-				case TermUI.UIReleaseEvent:
-					fmt.Println(ev.(TermUI.UIReleaseEvent))
+				// When enter is pressed...
+				case TermUI.UITextboxSubmitEvent:
+					// Select the elements we want to work with
+					textarea := TermUI.UIElements.GetByID(0, TermUI.LabelType)
+					input := TermUI.UIElements.GetByID(0, TermUI.TextboxType)
+					text := ev.(TermUI.UITextboxSubmitEvent).Name
+					if(len(text) >= 1) {
+						textarea.Name += ev.(TermUI.UITextboxSubmitEvent).Name+"\n"
+						input.Name = ""
+					}
+					// Redraw the objects.
+					// win.DrawUIElements is tempting but avoid it. Redraw only what you need.
+					go win.DrawUIElement(textarea)
+					go win.DrawUIElement(input)
+
+				// When the button is clicked...
+				case TermUI.UIPressEvent:
+					// What event is it?
+					// (it is only one, yes, this is just an example of how you'd normally do things)
+					switch(ev.(TermUI.UIPressEvent).Event) {
+						case TermUI.UIElements.GetByID(0, TermUI.ButtonType):
+							textarea := TermUI.UIElements.GetByID(0, TermUI.LabelType)
+							textarea.Name = ""
+							// In any case, redraw the screen.
+							win.DrawUIElement(textarea)
+					}
+					
+					
 			}
 		}
 	}()
@@ -71,16 +94,8 @@ func main() {
 		if ev == nil && xerr == nil {return}
 
 		// All the default listeners required to make the UI work; you are
-		// free to put your own function in place of this to cut
-		// anything you aren't listening on but this suffices for most
-		// cases
+		// free to put your own function in place of or in addition to this to cut
+		// anything you aren't listening on but this suffices for most cases
 		win.DefaultListeners(ev);
-
-		// making it a goroutine too seems weird on paper but
-		// without it, the cpu usage is usually 95%. using one brings 
-		// that down to like 0.2% ¯\_(ツ)_/¯
-
-		// that said, if you do put your own switch or another switch here,
-		// it should be in an inline goroutine
 	}
 }

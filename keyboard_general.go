@@ -55,7 +55,7 @@ func (win *Window) checkKeyPress(ev xgb.Event) {
 	if(key == "­") {return}
 	// What was the last thing we selected?
 	switch(lastSelectedUIEvent.Type) {
-		case 1: // textbox
+		case TextboxType: // textbox
 			switch(key) {
 				// If the length of the character is zero, it's a backspace ⌤
 				case "":
@@ -64,10 +64,12 @@ func (win *Window) checkKeyPress(ev xgb.Event) {
 					}
 				// If it's the character for enter, though...
 				case "⌤":
-					//
+					// Push a textbox submit event
+					evn := UITextboxSubmitEvent{lastSelectedUIEvent.Name,lastSelectedUIEvent}
+					win.uiEventChan <- evn
 				default:
 					lastSelectedUIEvent.Name += key
 			}
+			win.DrawUIElement(lastSelectedUIEvent)
 	}
-	win.DrawUIElements()
 }

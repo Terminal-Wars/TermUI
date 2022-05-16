@@ -68,6 +68,11 @@ func (win *Window) Base(Width uint16, Height uint16, X int16, Y int16, colors [5
 	for i, v := range rectangles {
 		xproto.PolyFillRectangle(win.Conn, draw[i], gcontext[i], v)
 	}
+
+	// Free the graphics contexts
+	for _, v := range gcontext {
+		xproto.FreeGC(win.Conn, v)
+	}
 } 
 
 func (win *Window) BaseRaised(Width uint16, Height uint16, X int16, Y int16) {
@@ -90,7 +95,7 @@ func (win *Window) Button(Name string, ID int16, Width uint16, Height uint16, X 
 		return
 	}
 	// Create a button.
-	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y,0,ButtonNum)
+	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y,ButtonType,ButtonNum)
 	UIElements.Buttons[ButtonNum] = ev
 	ButtonNum++
 }

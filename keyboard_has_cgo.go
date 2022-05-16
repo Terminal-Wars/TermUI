@@ -179,8 +179,8 @@ func (x *Context) UpdateKeymap() error {
 		var cookie C.xcb_xkb_get_device_info_cookie_t
 		cookie = C.xcb_xkb_get_device_info(xcb, 256,
                                 0, 0, 0, 0, 0, 0);
-		reply := C.xcb_xkb_get_device_info_reply(xcb, cookie, &theError)
-		if(reply != nil) {
+		_ = C.xcb_xkb_get_device_info_reply(xcb, cookie, &theError)
+		if(theError != nil) {
 			msg := int(theError.full_sequence)
 			return errors.New(fmt.Sprintf("x11: xkb_x11_get_core_keyboard_device_id failed. %d",msg))
 		} else {

@@ -7,15 +7,14 @@ import (
 	"github.com/jezek/xgb/xproto"
 )
 
-
 // "After all, writing text is way more comfortable using Xft"
 // (refuses to elaborate on how to fucking use xft with this library)
 
 func (win *Window) DrawText(Text string, X int16, Y int16, Size int16, FGColor uint32, BGColor uint32) (error) {
-	// new connection
+	// this has to be unique everytime. no we can't just put this in an init function
 	font, err := xproto.NewFontId(win.Conn)
-	if err != nil {return err}
-	
+	if(err != nil) {return err}
+
 	// open font (todo: convert Ubuntu or something into a font that X11 can use)
 	fontname := fmt.Sprintf("-*-fixed-*-*-*-*-%v-*-*-*-*-*-*-*",Size)
 	err = xproto.OpenFontChecked(win.Conn, font, uint16(len(fontname)), fontname).Check()
@@ -34,7 +33,9 @@ func (win *Window) DrawText(Text string, X int16, Y int16, Size int16, FGColor u
 	
 	// draw the actual text
 	xproto.ImageText16(win.Conn, byte(len(Text)), drawable, gcontext, X, Y, buttonText)
-	
+
+	xproto.FreeGC(win.Conn,gcontext)
+
 	return nil
 }
 
