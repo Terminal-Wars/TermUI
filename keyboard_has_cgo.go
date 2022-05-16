@@ -1,8 +1,7 @@
-// SPDX-License-Identifier: Unlicense OR MIT
-// (yes i stole this from another project shut up)
+// (i stole this from gioui btw)
 
-//go:build (linux && !android) || freebsd || openbsd
-// +build linux,!android freebsd openbsd
+//go:build cgo
+// +build cgo
 
 package TermUI
 
@@ -20,9 +19,10 @@ import (
 )
 
 /*
-#cgo linux pkg-config: xkbcommon xkbcommon-x11 x11-xcb
+#cgo linux pkg-config: xkbcommon xkbcommon-x11 x11-xcb xcb-xkb
 #cgo linux LDFLAGS: -lX11
 
+#include <xcb/xkb.h>
 #include <stdlib.h>
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
@@ -196,11 +196,11 @@ func (x *Context) SetKeymap(xkbKeyMap, xkbState unsafe.Pointer) {
 }
 
 func (x *Context) UpdateKeymap() error {
-	defer func() {
+	/*defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered div panic", r)
 		}
-	}()
+	}()*/
 	KeyContext.DestroyKeymapState()
 	ctx := (*C.struct_xkb_context)(unsafe.Pointer(KeyContext.Ctx))
 	if disp == nil {
@@ -212,7 +212,17 @@ func (x *Context) UpdateKeymap() error {
 	}
 	xkbDevID := C.xkb_x11_get_core_keyboard_device_id(xcb)
 	if xkbDevID == -1 {
-		return errors.New("x11: xkb_x11_get_core_keyboard_device_id failed")
+		var theError *C.xcb_generic_error_t
+		var cookie C.xcb_xkb_get_device_info_cookie_t
+		cookie = C.xcb_xkb_get_device_info(xcb, 256,
+                                0, 0, 0, 0, 0, 0);
+		reply := C.xcb_xkb_get_device_info_reply(xcb, cookie, &theError)
+		if(reply != nil) {
+			msg := int(theError.full_sequence)
+			return errors.New(fmt.Sprintf("x11: xkb_x11_get_core_keyboard_device_id failed. %d",msg))
+		} else {
+			return errors.New("x11: xkb_x11_get_core_keyboard_device_id failed. so did xcb_xkb_get_device_info_reply.")
+		}
 	}
 	keymap := C.xkb_x11_keymap_new_from_device(ctx, xcb, xkbDevID, C.XKB_KEYMAP_COMPILE_NO_FLAGS)
 	if keymap == nil {
@@ -247,8 +257,12 @@ func (x *Context) Modifiers() Modifiers {
 	return mods
 }
 
-func (x *Context) DecodeKey(kc xproto.Keycode) (string) {
-	kcim := x.DispatchKey(uint32(kc)) // KeyCodeInMap
+func DecodeKey(kc xproto.Keycode) (string) {
+	err := KeyContext.UpdateKeymap()
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	kcim := KeyContext.DispatchKey(uint32(kc)) // KeyCodeInMap
 	return kcim
 }
 
@@ -385,31 +399,13 @@ func convertKeysym(s C.xkb_keysym_t) (string, bool) {
 	return n, true
 }
 
-
-// =====
-// OUR SHIT
-// =====
+// We have functions to call an unexported function because under cgo these can't be
+// run as go routines, but without it they can, so if we have the opprutunity we should 
+// run these on seperate threads.
 
 func (win *Window) CheckKeyRelease(ev xgb.Event) {
-	if(lastSelectedUIEvent == nil) {return}
-	_ = KeyContext.DecodeKey(ev.(xproto.KeyReleaseEvent).Detail)
+	win.checkKeyRelease(ev)
 }
-
 func (win *Window) CheckKeyPress(ev xgb.Event) {
-	err := KeyContext.UpdateKeymap()
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	if(lastSelectedUIEvent == nil) {return}
-	key := KeyContext.DecodeKey(ev.(xproto.KeyPressEvent).Detail)
-	// What was the last thing we selected?
-	switch(lastSelectedUIEvent.Type) {
-		case 1: // textbox
-			if(len(key) == 0 && len(lastSelectedUIEvent.Name) >= 1) { // If the length of the character is zero, it's a backspace
-				lastSelectedUIEvent.Name = string(lastSelectedUIEvent.Name[0:len(lastSelectedUIEvent.Name)-1])
-			} else {
-				lastSelectedUIEvent.Name += key
-			}
-		}
-	win.DrawUIElements()
+	win.checkKeyPress(ev)
 }
