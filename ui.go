@@ -171,7 +171,7 @@ func (win *Window) DrawUIButton(i uint8) {
 	} else {
 		win.BaseRaised(btn.Width,btn.Height,btn.X,btn.Y)
 	}
-	go win.DrawText(btn.Name,btnX,btnY,12,0x000000,0xafb5b5)
+	win.DrawText(btn.Name,btnX,btnY,12,0x000000,0xafb5b5)
 }
 
 func (win *Window) DrawUIButtons() {
@@ -202,7 +202,7 @@ func (win *Window) DrawUITextbox(i uint8) {
 	if(len(txt.Name) > int(txt.Width/6-1)) {
 		name = txt.Name[len(txt.Name)-int(txt.Width/6-1):len(txt.Name)]
 	}
-	go win.DrawText(name,txt.X+6,txtY,12,0x000000,0xffffff)
+	win.DrawText(name,txt.X+6,txtY,12,0x000000,0xffffff)
 }
 
 func (win *Window) DrawUITextboxes() {
@@ -259,7 +259,7 @@ func (win *Window) DrawUILabel(i uint8) {
 	}
 	// Then go through the array and draw it.
 	for i, v := range rows_ {
-		go win.DrawText(v,txt.X+6,txtY+(int16(i)*13),12,0x000000,0xffffff)
+		win.DrawText(v,txt.X+6,txtY+(int16(i)*13),12,0x000000,0xffffff)
 	}
 }
 
