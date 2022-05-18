@@ -85,17 +85,18 @@ func (win *Window) BaseSunken(Width uint16, Height uint16, X int16, Y int16) {
 	win.Base(Width,Height,X,Y,colors)
 }
 
-func (win *Window) Button(Name string, ID int16, Width uint16, Height uint16, X int16, Y int16) {
+func (win *Window) Button(Name string, ID int16, Width uint16, Height uint16, X int16, Y int16) (*UIEvent) {
 	if(win.NoMoreUIEvents()) {
 		fmt.Println("No more UI events allowed. Refusing to make a button.")
-		return
+		return nil
 	}
 	if(ButtonNum >= 16) {
 		fmt.Println("No more buttons allowed. Refusing to make a button.")
-		return
+		return nil
 	}
 	// Create a button.
 	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y,ButtonType,ButtonNum)
 	UIElements.Buttons[ButtonNum] = ev
 	ButtonNum++
+	return ev
 }
