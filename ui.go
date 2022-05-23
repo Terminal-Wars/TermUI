@@ -3,6 +3,7 @@ package TermUI
 import (
 	"fmt"
 	"strings"
+	"strconv"
 
 	"github.com/jezek/xgb/xproto"
 )
@@ -29,6 +30,7 @@ const ( // names for the types above
 	ButtonType	int8 = 0
 	TextboxType int8 = 1
 	LabelType 	int8 = 2
+	SquareType 	int8 = 3
 )
 
 var UIEventNum uint8 = 0
@@ -46,20 +48,23 @@ type UIElementStruct struct {
 	Buttons		[]*UIEvent
 	Textboxes	[]*UIEvent
 	Labels  	[]*UIEvent
+	Squares 	[]*UIEvent
 }
 var UIElements UIElementStruct = UIElementStruct{
 	make([]*UIEvent, 16),
 	make([]*UIEvent, 16),
 	make([]*UIEvent, 64),
+	make([]*UIEvent, 32),
 }
 
 func (v UIElementStruct) GetByID(ID uint8, FindType int8) *UIEvent {
 	// Which type should we be searching?
 	var searchThru []*UIEvent
 	switch(FindType) {
-		case ButtonType: searchThru = UIElements.Buttons
-		case TextboxType: searchThru = UIElements.Textboxes
-		case LabelType: searchThru = UIElements.Labels
+		case ButtonType: 	searchThru = UIElements.Buttons
+		case TextboxType: 	searchThru = UIElements.Textboxes
+		case LabelType: 	searchThru = UIElements.Labels
+		case SquareType: 	searchThru = UIElements.Squares 
 	}
 	for _, v := range searchThru {
 		if(v.id == ID) {
@@ -196,7 +201,7 @@ func (win *Window) DrawUITextbox(i uint8) {
 	if (txt.State == 1 && len(txt.Name) < int(txt.Width/6-1)) {
 		txtX_ := txt.X+int16((len(txt.Name)*6)+6)
 		txtY_ := txt.Y+4
-		win.Square(1, txt.Height-7, txtX_, txtY_, []uint32{0x000000})
+		win.drawSquareSuddenly(1, txt.Height-7, txtX_, txtY_, 0x000000)
 	}
 	name := txt.Name
 	if(len(txt.Name) > int(txt.Width/6-1)) {
@@ -252,8 +257,8 @@ func (win *Window) DrawUILabel(i uint8) {
 			rows__ = WordWrap(txt.Name, maxWidth-2)
 			// ...shrink the array down.
 			rows__ = rows_[len(rows_)-maxHeight:len(rows_)]
-			// put in a checkerboard pattern in place of where a scrollbar would go
-			go win.Square(8, uint16(txt.Height)-8, int16(txt.Width-8), txt.Y+4, []uint32{0xdedede})
+			// put in a grey box in place of where a scrollbar would go
+			go win.drawSquareSuddenly(8, uint16(txt.Height)-8, int16(txt.Width-8), txt.Y+4, 0xdedede)
 			rows_ = rows__
 		}
 	}
@@ -269,33 +274,45 @@ func (win *Window) DrawUILabels() {
 	}
 }
 
-// ========
-// GENERAL/MISC 
-// ========
+// =======
+// SQUARES
+// =======
+// States are not used
 
-// Draw one UI Element
-func (win *Window) DrawUIElement(ev *UIEvent) {
-	switch(ev.Type) {
-		case ButtonType: 	go win.DrawUIButton(ev.id)
-		case TextboxType:	go win.DrawUITextbox(ev.id)
-		case LabelType: 	go win.DrawUILabel(ev.id)
+var SquareNum uint8 = 0
+
+// This is such a simple object that we don't even need a new file for it. Just put it in here lol
+
+func (win *Window) Square(ID int16, Width uint16, Height uint16, X int16, Y int16, Color uint32) (*UIEvent) {
+	if(win.NoMoreUIEvents()) {
+		fmt.Println("No more UI events allowed. Refusing to make a square.")
+		return nil
 	}
+	if(SquareNum >= 32) {
+		fmt.Println("No more squares allowed. Refusing to make a square.")
+		return nil
+	}
+	// Turn the color into a string
+	Name := strconv.FormatUint(uint64(Color), 10)
+	// Create a square.
+	ev := win.NewUIEvent(Name,ID,Width,Height,X,Y,SquareType,SquareNum)
+	UIElements.Squares[SquareNum] = ev
+	SquareNum++
+	return ev
 }
 
-// Draw all UI elements.
-func (win *Window) DrawUIElements() {
-	go win.DrawUIButtons()
-	go win.DrawUITextboxes()
-	go win.DrawUILabels()
-}
+func (win *Window) DrawUISquare(i uint8) {
+	square := UIElements.Squares[i]
+	colorInt, err := strconv.ParseUint(square.Name, 10, 32)
+	if(err != nil) {
+		fmt.Printf("Error drawing square %d:\n %s",square.ID,err.Error())
+		UIElements.Squares[i] = nil
+		return
+	}
+	win.drawSquareSuddenly(square.Width,square.Height,square.X,square.Y,uint32(colorInt))
+} 
 
-// Wait for a UI event
-func (win *Window) WaitForUIEvent() (Event)  {
-	return <-win.uiEventChan
-}
-
-// Draw a simple square 
-func (win *Window) Square(Width uint16, Height uint16, X int16, Y int16, Colors []uint32) {
+func (win *Window) drawSquareSuddenly(Width uint16, Height uint16, X int16, Y int16, Color uint32) {
 	// Drawing context
 	draw := xproto.Drawable(win.Window)
 
@@ -308,7 +325,7 @@ func (win *Window) Square(Width uint16, Height uint16, X int16, Y int16, Colors 
 
 	// gcontext settings
 	mask := uint32(xproto.GcForeground)
-	values := Colors
+	values := []uint32{Color}
 	xproto.CreateGC(win.Conn, gcontext, draw, mask, values)
 
 	// basic rectangle
@@ -317,3 +334,36 @@ func (win *Window) Square(Width uint16, Height uint16, X int16, Y int16, Colors 
 
 	xproto.FreeGC(win.Conn,gcontext)
 } 
+
+func (win *Window) DrawUISquares() {
+	for i := 0; uint8(i) < LabelNum; i++ {
+		go win.DrawUISquare(uint8(i))
+	}
+}
+
+// ========
+// GENERAL/MISC 
+// ========
+
+// Draw one UI Element
+func (win *Window) DrawUIElement(ev *UIEvent) {
+	switch(ev.Type) {
+		case ButtonType: 	go win.DrawUIButton(ev.id)
+		case TextboxType:	go win.DrawUITextbox(ev.id)
+		case LabelType: 	go win.DrawUILabel(ev.id)
+		case SquareType: 	go win.DrawUISquare(ev.id)
+	}
+}
+
+// Draw all UI elements.
+func (win *Window) DrawUIElements() {
+	go win.DrawUIButtons()
+	go win.DrawUITextboxes()
+	go win.DrawUILabels()
+	go win.DrawUISquares()
+}
+
+// Wait for a UI event
+func (win *Window) WaitForUIEvent() (Event)  {
+	return <-win.uiEventChan
+}
