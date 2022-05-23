@@ -90,3 +90,15 @@ func (win *Window) PercentOfHeight(per uint16) (int16) {
 	fmt.Println()
 	return int16(float32(win.Height)*(float32(per)/100))
 }
+
+// goroutine for a switch that listens for all the default shit we usually want.
+func (win *Window) DefaultListeners(ev xgb.Event) {
+	switch ev.(type) {
+		case xproto.ExposeEvent: 		win.DrawUIElements()
+		case xproto.ButtonPressEvent: 	go win.CheckMousePress(ev) 
+		case xproto.ButtonReleaseEvent: go win.CheckMouseRelease(ev) 
+		case xproto.KeyPressEvent: 		win.CheckKeyPress(ev)
+		case xproto.KeyReleaseEvent: 	win.CheckKeyRelease(ev) 
+		case xproto.DestroyNotifyEvent: return
+	}
+}
