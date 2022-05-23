@@ -38,6 +38,7 @@ func NewWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error
 }
 
 // The same function as above, but it calls NewRawWindowComplex
+// [[ CURRENTLY BROKEN, IT CAUSES A CRASH UNLESS YOU REMOVE THE FLAG THAT CAUSES WINDOWS TO BE UNDECORATED ]]
 func NewRawWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error) {
 	flags := defaultFlags(Flags)
 	Window, Error = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask | xproto.CwOverrideRedirect, flags)
