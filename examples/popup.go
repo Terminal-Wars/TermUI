@@ -10,8 +10,8 @@ import (
 
 // Example program
 func main() {
-	// Create a 320x200 window that listens for nothing
-	win, err := TermUI.NewWindow(320,200,
+	// Create a 320x200 window that listens for nothing and has no border.
+	win, err := TermUI.NewRawWindow(320,200,
 		[]uint32{
 			0xffffffff,
 		})
