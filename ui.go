@@ -336,7 +336,7 @@ func (win *Window) drawSquareSuddenly(Width uint16, Height uint16, X int16, Y in
 } 
 
 func (win *Window) DrawUISquares() {
-	for i := 0; uint8(i) < LabelNum; i++ {
+	for i := 0; uint8(i) < SquareNum; i++ {
 		go win.DrawUISquare(uint8(i))
 	}
 }
