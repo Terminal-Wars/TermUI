@@ -1,0 +1,1 @@
+This is a temporary fork of [jezek/xgb](https://github.com/jezek/xgb/) that fixes a bug in the createWindowRequest function
