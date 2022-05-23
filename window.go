@@ -15,6 +15,8 @@ type Window struct {
 	Window 			xproto.Window
 	Width 			uint16
 	Height 			uint16
+	X 				int16
+	Y  				int16
 
 	uiEventChan		chan Event
 }
@@ -63,10 +65,26 @@ func NewWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error
 	return
 }
 
-// The same function as above, but it calls NewRawWindowComplex
+func (win *Window) NewChildWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error) {
+	flags := defaultFlags(Flags,2)
+	Window, Error = win.NewChildWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, flags)
+	return
+}
+
+// The same function as above, but the window is made undecorated.
 func NewUndecoratedWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error) {
 	flags := defaultFlags(Flags,2)
 	Window, Error = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, flags)
+	
+	data := []uint{2, 0, 0, 0, 0}
+	ChangeProp(&Window, Window.Window, 32, "_MOTIF_WM_HINTS", "_MOTIF_WM_HINTS",data...)
+
+	return
+}
+
+func (win *Window) NewUndecoratedChildWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error) {
+	flags := defaultFlags(Flags,2)
+	Window, Error = win.NewChildWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, flags)
 	
 	data := []uint{2, 0, 0, 0, 0}
 	ChangeProp(&Window, Window.Window, 32, "_MOTIF_WM_HINTS", "_MOTIF_WM_HINTS",data...)
@@ -104,10 +122,50 @@ func NewWindowComplex(Width, Height, BorderWidth uint16, Mask uint32, Flags []ui
 	if err != nil {return}
 
 	// make a new Window object with what we've gotten here
-	win = Window{X, screen, windowID,Width,Height, 		make(chan Event)}
+	win = Window{
+		Conn: X,
+		Screen: screen,
+		Window: windowID,
+		Width: Width,
+		Height: Height,
+		uiEventChan: make(chan Event),
+	}
 
 	return
 }
+
+// The same function, but for child windows.
+func (win *Window) NewChildWindowComplex(Width, Height, BorderWidth uint16, Mask uint32, Flags []uint32) (cwin Window, err error) {
+
+	// new window ID
+	windowID, err := xproto.NewWindowId(win.Conn)
+	if err != nil {return}
+
+	// create a window using that ID
+	err = xproto.CreateWindowChecked(win.Conn, win.Screen.RootDepth, windowID, win.Screen.Root,
+		0, 0, Width, Height, BorderWidth,
+		xproto.WindowClassInputOutput, win.Screen.RootVisual, 
+		Mask,
+		Flags).Check()
+	if(err != nil) {return}
+
+	// make that window appear on screen.
+	err = xproto.MapWindowChecked(win.Conn, windowID).Check()
+	if err != nil {return}
+
+	// make a new Window object with what we've gotten here
+	cwin = Window{
+		Conn: win.Conn,
+		Screen: win.Screen,
+		Window: windowID,
+		Width: Width,
+		Height: Height,
+		uiEventChan: make(chan Event),
+	}
+
+	return
+}
+
 
 // copy/pasted and modified functions from xgbutil, a mostly undocumented library
 
@@ -181,15 +239,21 @@ func (win *Window) PercentOfHeight(per uint16) (int16) {
 	return int16(float32(win.Height)*(float32(per)/100))
 }
 
+func (win *Window) UpdateSavedLocation(ev xgb.Event) {
+	win.X = ev.(xproto.ConfigureNotifyEvent).X
+	win.Y = ev.(xproto.ConfigureNotifyEvent).Y
+}
+
 // goroutine for a switch that listens for all the default shit we usually want.
 func (win *Window) DefaultListeners(ev xgb.Event) {
 	switch ev.(type) {
-		case xproto.ExposeEvent: 		win.DrawUIElements()
-		case xproto.MotionNotifyEvent:  win.UpdateMouseCoords(ev)
-		case xproto.ButtonPressEvent: 	go win.CheckMousePress(ev) 
-		case xproto.ButtonReleaseEvent: go win.CheckMouseRelease(ev) 
-		case xproto.KeyPressEvent: 		win.CheckKeyPress(ev)
-		case xproto.KeyReleaseEvent: 	win.CheckKeyRelease(ev) 
+		case xproto.ExposeEvent: 			win.DrawUIElements()
+		case xproto.MotionNotifyEvent:  	win.UpdateMouseCoords(ev)
+		case xproto.ButtonPressEvent: 		go win.CheckMousePress(ev) 
+		case xproto.ButtonReleaseEvent: 	go win.CheckMouseRelease(ev) 
+		case xproto.KeyPressEvent: 			win.CheckKeyPress(ev)
+		case xproto.KeyReleaseEvent: 		win.CheckKeyRelease(ev) 
+		case xproto.ConfigureNotifyEvent: 	win.UpdateSavedLocation(ev)
 		case xproto.DestroyNotifyEvent: return
 	}
 }
