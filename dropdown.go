@@ -25,11 +25,6 @@ func (win *Window) Dropdown(X, Y int16, Strings []string) (error) {
 	if(err != nil) {return errors.New("Couldn't create error: "+err.Error())}
 	Dropdowns = append(Dropdowns,&dropdown)
 
-	// Move the dropdown to wherever we want it.
-	err = xproto.ConfigureWindowChecked(dropdown.Conn, dropdown.Window,
-		xproto.ConfigWindowX|xproto.ConfigWindowY,
-		[]uint32{uint32(win.X), uint32(win.Y)}).Check()
-
 	if err != nil {
 		fmt.Errorf("Couldn't move window: %s", err)
 	}	
