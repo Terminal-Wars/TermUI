@@ -2,11 +2,13 @@ package TermUI
 
 import (
 	"errors"
+	"fmt"
+	//"github.com/jezek/xgb/xproto"
 )
 
 var Dropdowns []*Window
 
-func (win *Window) Dropdown(X, Y uint16, Strings []string) (error) {
+func (win *Window) Dropdown(X, Y int16, Strings []string) (error) {
 	// Go through each of the options and find out which is longest.
 	var width uint16 = 0
 	var height uint16 = uint16(len(Strings))
@@ -16,7 +18,7 @@ func (win *Window) Dropdown(X, Y uint16, Strings []string) (error) {
 		}
 	}
 	// Create a new window based on all the other values
-	dropdown, err := NewWindow(width*8,height*16,
+	dropdown, err := NewUndecoratedWindow(width*8,height*16,
 			[]uint32{
 				0xffffffff,
 			})
@@ -26,7 +28,14 @@ func (win *Window) Dropdown(X, Y uint16, Strings []string) (error) {
 	for i, v := range Strings {
 		dropdown.DrawText(v,4,int16(12*i)+12,12,0x000000,0xffffff)
 	}
-
+	// Finally, move the dropdown to wherever we want it.
+	fmt.Printf("%d, %d\n",X,Y)
+	/*err = xproto.ConfigureWindowChecked(dropdown.Conn, dropdown.Window,
+		xproto.ConfigWindowX|xproto.ConfigWindowY,
+		[]uint32{uint32(X), uint32(Y)}).Check()
+	if err != nil {
+		fmt.Errorf("Couldn't move window: %s", err)
+	}*/
 
 	return nil
 }

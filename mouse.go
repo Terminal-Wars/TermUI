@@ -10,9 +10,12 @@ var MousePos struct {
 	Y 		int16
 }
 
-func (win *Window) CheckMouseHover(ev xgb.Event) {
+func (win *Window) UpdateMouseCoords(ev xgb.Event) {
 	MousePos.X = ev.(xproto.MotionNotifyEvent).EventX
 	MousePos.Y = ev.(xproto.MotionNotifyEvent).EventY
+}
+
+func (win *Window) CheckMouseHover(ev xgb.Event) {
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v == nil) {
 		if(lastSelectedUIEvent != nil) {
@@ -31,8 +34,6 @@ func (win *Window) CheckMouseHover(ev xgb.Event) {
 }
 
 func (win *Window) CheckMousePress(ev xgb.Event) {
-	MousePos.X = ev.(xproto.ButtonPressEvent).EventX
-	MousePos.Y = ev.(xproto.ButtonPressEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v == nil) {
 		if(lastSelectedUIEvent != nil) {
@@ -51,8 +52,6 @@ func (win *Window) CheckMousePress(ev xgb.Event) {
 }
 
 func (win *Window) CheckMouseRelease(ev xgb.Event) {
-	MousePos.X = ev.(xproto.ButtonReleaseEvent).EventX
-	MousePos.Y = ev.(xproto.ButtonReleaseEvent).EventY
 	v := checkMouseOver(MousePos.X, MousePos.Y)
 	if(v == nil) {
 		if(lastSelectedUIEvent != nil) {
@@ -68,7 +67,6 @@ func (win *Window) CheckMouseRelease(ev xgb.Event) {
 	evn := UIReleaseEvent{v.Name, v}
 	win.uiEventChan <- evn
 }
-
 
 func checkMouseOver(x int16, y int16) (*UIEvent) {
 	for i, v := range UIEvents {

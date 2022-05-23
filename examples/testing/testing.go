@@ -27,7 +27,7 @@ func main() {
 			switch ev.(type) {
 				case TermUI.UIPressEvent:
 					win.ClearDropdowns()
-					win.Dropdown(0,0,[]string{"Option 1", "Option 2", "Option 3"})
+					win.Dropdown(TermUI.MousePos.X,TermUI.MousePos.Y,[]string{"Option 1", "Option 2", "Option 3"})
 			}
 		}
 	}()

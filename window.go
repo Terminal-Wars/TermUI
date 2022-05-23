@@ -7,6 +7,8 @@ import (
 	"github.com/jezek/xgb/xproto"
 )
 
+var Atoms map[string]xproto.Atom
+
 type Window struct {
 	Conn 			*xgb.Conn
 	Screen 			*xproto.ScreenInfo
@@ -15,6 +17,10 @@ type Window struct {
 	Height 			uint16
 
 	uiEventChan		chan Event
+}
+
+func init() {
+	Atoms = make(map[string]xproto.Atom, 50)
 }
 
 // function for returning a []uint32 with the default flags 
@@ -58,12 +64,12 @@ func NewWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error
 }
 
 // The same function as above, but it calls NewRawWindowComplex
-func NewRawWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error) {
+func NewUndecoratedWindow(Width, Height uint16, Flags []uint32) (Window Window, Error error) {
 	flags := defaultFlags(Flags,2)
 	Window, Error = NewWindowComplex(Width, Height, 0, xproto.CwBackPixel | xproto.CwEventMask, flags)
 	
 	data := []uint{2, 0, 0, 0, 0}
-	ChangeProp32(&Window, Window.Window, "_MOTIF_WM_HINTS", "_MOTIF_WM_HINTS",data...)
+	ChangeProp(&Window, Window.Window, 32, "_MOTIF_WM_HINTS", "_MOTIF_WM_HINTS",data...)
 
 	return
 }
@@ -107,7 +113,12 @@ func NewWindowComplex(Width, Height, BorderWidth uint16, Mask uint32, Flags []ui
 
 // ChangeProperty abstracts the semi-nastiness of xgb.ChangeProperty.
 func ChangeProp(win *Window, win_ xproto.Window, format byte, prop string,
-	typ string, data []byte) error {
+	typ string, data ...uint) error {
+
+	buf := make([]byte, len(data)*4)
+	for i, datum := range data {
+		xgb.Put32(buf[(i*4):], uint32(datum))
+	}
 
 	propAtom, err := Atom(win, prop, false)
 	if err != nil {
@@ -121,24 +132,14 @@ func ChangeProp(win *Window, win_ xproto.Window, format byte, prop string,
 
 	return xproto.ChangePropertyChecked(win.Conn, xproto.PropModeReplace, win_,
 		propAtom, typAtom, format,
-		uint32(len(data)/(int(format)/8)), data).Check()
+		uint32(len(buf)/(int(format)/8)), buf).Check()
 }
-
-// ChangeProperty32 makes changing 32 bit formatted properties easier
-// by constructing the raw X data for you.
-func ChangeProp32(win *Window, win_ xproto.Window, prop string, typ string,
-	data ...uint) error {
-
-	buf := make([]byte, len(data)*4)
-	for i, datum := range data {
-		xgb.Put32(buf[(i*4):], uint32(datum))
-	}
-
-	return ChangeProp(win, win_, 32, prop, typ, buf)
-}
-
 
 func Atom(win *Window, name string, onlyIfExists bool) (xproto.Atom, error) {
+	// Check the cache first
+	if aid, ok := atomGet(name); ok {
+		return aid, nil
+	}
 
 	reply, err := xproto.InternAtom(win.Conn, onlyIfExists,
 		uint16(len(name)), name).Reply()
@@ -146,7 +147,27 @@ func Atom(win *Window, name string, onlyIfExists bool) (xproto.Atom, error) {
 		return 0, fmt.Errorf("Atom: Error interning atom '%s': %s", name, err)
 	}
 
+	// If we're here, it means we didn't have this atom cached. So cache it!
+	cacheAtom(name, reply.Atom)
+
 	return reply.Atom, nil
+}
+
+func atomGet(name string) (xproto.Atom, bool) {
+	// leftover code from xkbutil, commenting it out
+	// might be important idk
+	//xu.AtomsLck.RLock()
+	//defer xu.AtomsLck.RUnlock()
+
+	aid, ok := Atoms[name]
+	return aid, ok
+}
+
+func cacheAtom(name string, aid xproto.Atom) {
+	//xu.AtomsLck.Lock()
+	//defer xu.AtomsLck.Unlock()
+
+	Atoms[name] = aid
 }
 
 // functions for getting percentages of the window
@@ -164,6 +185,7 @@ func (win *Window) PercentOfHeight(per uint16) (int16) {
 func (win *Window) DefaultListeners(ev xgb.Event) {
 	switch ev.(type) {
 		case xproto.ExposeEvent: 		win.DrawUIElements()
+		case xproto.MotionNotifyEvent:  win.UpdateMouseCoords(ev)
 		case xproto.ButtonPressEvent: 	go win.CheckMousePress(ev) 
 		case xproto.ButtonReleaseEvent: go win.CheckMouseRelease(ev) 
 		case xproto.KeyPressEvent: 		win.CheckKeyPress(ev)
